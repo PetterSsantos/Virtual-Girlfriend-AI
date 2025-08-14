@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Girlfriend - AI Companion</title>
+   <link rel="stylesheet" href="/namorada_virtual/src/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">💕 Virtual Girlfriend AI</div>
+            <div class="subtitle">Sua companheira virtual personalizada</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('personality')">Personalizar</button>
+                    <button class="tab-btn" onclick="switchTab('chats')">Conversas</button>
+                </div>
+                
+                <div id="personality" class="tab-content active">
+                    <div class="agent-toggle">
+                        <span>Modo Agente Pessoal</span>
+                        <div class="toggle-switch" onclick="toggleAgent(this)"></div>
+                    </div>
+                    
+                    <div class="personality-form">
+                        <div class="form-group">
+                            <label>Nome</label>
+                            <input type="text" id="companion-name" value="Amanda" placeholder="Nome da sua companheira">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Idade</label>
+                            <input type="number" id="companion-age" value="19" min="18" max="50">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Personalidade</label>
+                            <div class="traits-grid">
+                                <div class="trait-item">
+                                    <input type="checkbox" id="carinhosa" checked>
+                                    <label for="carinhosa">Carinhosa</label>
+                                </div>
+                                <div class="trait-item">
+                                    <input type="checkbox" id="timida">
+                                    <label for="timida">Tímida</label>
+                                </div>
+                                <div class="trait-item">
+                                    <input type="checkbox" id="engracada" checked>
+                                    <label for="engracada">Engraçada</label>
+                                </div>
+                                <div class="trait-item">
+                                    <input type="checkbox" id="inteligente" checked>
+                                    <label for="inteligente">Inteligente</label>
+                                </div>
+                                <div class="trait-item">
+                                    <input type="checkbox" id="curiosa" checked>
+                                    <label for="curiosa">Curiosa</label>
+                                </div>
+                                <div class="trait-item">
+                                    <input type="checkbox" id="brincalhona">
+                                    <label for="brincalhona">Brincalhona</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hobbies (separados por vírgula)</label>
+                            <textarea id="hobbies" placeholder="Ex: ler livros, assistir filmes, jogar videogame">ler livros de romance, assistir séries, jogar Valorant, ouvir música indie</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Comidas Favoritas</label>
+                            <input type="text" id="foods" value="chocolate, pizza, sorvete de morango" placeholder="Ex: pizza, chocolate, sushi">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Medos</label>
+                            <input type="text" id="fears" value="filmes de terror, aranhas" placeholder="Ex: aranhas, altura, escuro">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Sonhos e Objetivos</label>
+                            <textarea id="dreams" placeholder="Ex: viajar pelo mundo, abrir um negócio">viajar pelo mundo, ter um café próprio, escrever um livro</textarea>
+                        </div>
+                        
+                        <button class="save-btn" onclick="savePersonality()">Salvar Personalização</button>
+                    </div>
+                </div>
+                
+                <div id="chats" class="tab-content">
+                    <div class="chats-list" id="chatsList">
+                        <div class="chat-item active">
+                            <div class="chat-date">Hoje</div>
+                            <div class="chat-preview">Oi amor! Como foi seu dia?</div>
+                        </div>
+                        <div class="chat-item">
+                            <div class="chat-date">Ontem</div>
+                            <div class="chat-preview">Estava pensando em você...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2 id="companion-header">💕 Amanda</h2>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Online</span>
+                    </div>
+                </div>
+                
+                <div class="messages-container" id="messagesContainer">
+                    <div class="message ai">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            Oi amor! 💕 Que bom te ver aqui... Como foi seu dia?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <textarea class="message-input" id="messageInput" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                    <button class="send-btn" onclick="sendMessage()">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPersonality = {
+            name: "Amanda",
+            age: 19,
+            traits: ["carinhosa", "engracada", "inteligente", "curiosa"],
+            hobbies: "ler livros de romance, assistir séries, jogar Valorant, ouvir música indie",
+            foods: "chocolate, pizza, sorvete de morango",
+            fears: "filmes de terror, aranhas",
+            dreams: "viajar pelo mundo, ter um café próprio, escrever um livro"
+        };
+        
+        let agentMode = false;
+        let conversations = [];
+        let currentChatId = Date.now();
+        
+        function switchTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+        
+        function toggleAgent(element) {
+            element.classList.toggle('active');
+            agentMode = !agentMode;
+            
+            if (agentMode) {
+                addSystemMessage("🤖 Modo Agente Pessoal ativado! Agora posso te ajudar com tarefas do computador.");
+            } else {
+                addSystemMessage("💕 Modo Agente Pessoal desativado. Voltando ao modo conversa normal.");
+            }
+        }
+        
+        function savePersonality() {
+            const name = document.getElementById('companion-name').value;
+            const age = document.getElementById('companion-age').value;
+            const hobbies = document.getElementById('hobbies').value;
+            const foods = document.getElementById('foods').value;
+            const fears = document.getElementById('fears').value;
+            const dreams = document.getElementById('dreams').value;
+            
+            // Get selected traits
+            const traits = [];
+            document.querySelectorAll('.trait-item input[type="checkbox"]:checked').forEach(checkbox => {
+                traits.push(checkbox.id);
+            });
+            
+            currentPersonality = {
+                name, age, traits, hobbies, foods, fears, dreams
+            };
+            
+            // Update header
+            document.getElementById('companion-header').textContent = `💕 ${name}`;
+            
+            // Add confirmation message
+            addSystemMessage(`Personalidade atualizada! ${name} agora tem as características que você definiu.`);
+        }
+        
+        function addSystemMessage(text) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = `
+                <div class="message ai">
+                    <div class="message-avatar">🔧</div>
+                    <div class="message-content">${text}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Simulate AI response (you'll integrate with your AI API here)
+            setTimeout(() => {
+                const response = generateResponse(message);
+                addMessage(response, 'ai');
+            }, 1000);
+        }
+        
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            
+            const avatar = sender === 'user' ? 'U' : currentPersonality.name.charAt(0);
+            
+            messageDiv.innerHTML = `
+                <div class="message ${sender}">
+                    <div class="message-avatar">${avatar}</div>
+                    <div class="message-content">${text}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Save conversation to storage
+            saveConversation(text, sender);
+        }
+        
+        function generateResponse(userMessage) {
+            // This is a placeholder - you'll integrate with your AI API
+            const responses = [
+                "Que interessante! Conte-me mais sobre isso 😊",
+                "Hmm, entendo... e como você se sente sobre isso?",
+                "Nossa, adorei saber disso! 💕",
+                "Que legal! Você sempre me surpreende 😄",
+                "Interessante perspectiva... o que mais você pensa sobre isso?"
+            ];
+            
+            if (agentMode && (userMessage.toLowerCase().includes('computador') || userMessage.toLowerCase().includes('sistema'))) {
+                return "🤖 Como seu agente pessoal, posso te ajudar com isso! O que exatamente você gostaria que eu fizesse?";
+            }
+            
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+        
+        function saveConversation(message, sender) {
+            const today = new Date().toDateString();
+            let todayChat = conversations.find(chat => chat.date === today);
+            
+            if (!todayChat) {
+                todayChat = {
+                    id: Date.now(),
+                    date: today,
+                    messages: []
+                };
+                conversations.push(todayChat);
+            }
+            
+            todayChat.messages.push({
+                text: message,
+                sender: sender,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update chats list (simplified for demo)
+            updateChatsList();
+        }
+        
+        function updateChatsList() {
+            // This would update the chats sidebar with saved conversations
+            // Implementation would depend on your database choice
+        }
+        
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+        
+        // Send message on Enter
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
