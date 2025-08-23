@@ -1,49 +1,98 @@
-# README.md
+# Namorada Virtual - Cortana 💻❤️
 
-# Namorada Virtual - Amanda
+Este projeto é um chatbot chamado **Cortana**, uma namorada virtual que
+interage com os usuários de forma natural e personalizada.\
+O sistema utiliza **Python** e uma interface Gráfica moderna em Tkinter, que abre uma janela principal ao ser executada. Essa janela permite a interação com a **Cortana** de forma simples e intuitiva. para
+oferecer uma experiência mais imersiva.
 
-Este projeto é um chatbot chamado "Amanda", uma namorada virtual que interage com os usuários de forma natural e personalizada. O chatbot utiliza a biblioteca `google.generativeai` para gerar respostas baseadas em um modelo de linguagem.
+---
 
-## Estrutura do Projeto
+## 📂 Estrutura do Projeto
 
-```
-namorada_virtual
-├── src
-│   └── namorada_virtual.py  # Implementação principal do chatbot
-├── requirements.txt          # Dependências do projeto
-└── README.md                 # Documentação do projeto
-```
+    GirlfriendAI/
+    │
+    ├── namorada_virtual/
+    │   ├── main_application.py      # Arquivo principal para rodar o sistema
+    │   ├── setup_install.py         # Script de instalação automática
+    │   │
+    │   ├── src/                     # Código-fonte da aplicação
+    │   │   ├── models/
+    │   │   ├── services/
+    │   │   │   ├── database_system.py
+    │   │   │   ├── ai_personality_system.py
+    │   │   │   └── personal_agent_system.py
+    │   │
+    │   ├── static/                  # Arquivos estáticos (CSS, imagens, JS)
+    │   │   └── style.css
+    │   │
+    │   └── templates/               # Templates HTML da aplicação
+    │       └── virtual_girlfriend_app.html
+    │
+    ├── requirements.txt             # Dependências do projeto
+    └── README.md                    # Documentação do projeto
 
-## Funcionalidades
+---
 
-- Interação natural com o usuário.
-- Memória de conversas, permitindo que Amanda lembre-se de interações anteriores.
-- Personalidade definida, com hobbies, medos e sonhos.
-- Respostas personalizadas com base no contexto da conversa.
+## 🌐 Versão Web
 
-## Requisitos
+A versão web da Cortana (interface em HTML/CSS executada no navegador) ainda não está disponível.
+No momento, a aplicação funciona apenas na versão desktop com Tkinter, abrindo uma janela própria ao ser executada.
 
-Para executar este projeto, você precisará instalar as dependências listadas no arquivo `requirements.txt`. Você pode fazer isso usando o `pip`:
+🔧 Futuramente, a versão web poderá ser implementada usando Flask ou Django, permitindo acesso direto pelo navegador.
+
+---
+
+## ✨ Funcionalidades
+
+-   💬 **Interação natural** com o usuário.\
+-   🧠 **Memória de conversas**, permitindo lembrar interações
+    anteriores.\
+-   🎭 **Personalidade configurável** (hobbies, medos, sonhos, gostos).\
+-   🌐 **Interface Web em HTML/CSS** para uso via navegador.
+
+---
+
+## ⚙️ Instalação
+
+Para facilitar a configuração, use o script `setup_install.py`.\
+No terminal, execute:
 
 ```bash
-pip install -r requirements.txt
+python namorada_virtual/setup_install.py
 ```
 
-## Como Executar
+Esse script irá ensinar como rodar o sistema e instalar todas as dependências necessárias automaticamente.
 
-1. Clone este repositório ou baixe os arquivos.
-2. Navegue até o diretório do projeto.
-3. Instale as dependências conforme mencionado acima.
-4. Execute o chatbot com o seguinte comando:
+---
 
-```bash
-python src/namorada_virtual.py
-```
+## ▶️ Como Executar
 
-## Contribuições
+Atualmente a aplicação não pode ser iniciada com python -m namorada_virtual.main_application, pois a estrutura do projeto ainda não está configurada como pacote.
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue ou enviar um pull request.
+🔹 Opção 1 – Rodando pelo VS Code
 
-## Licença
+Abra a pasta do projeto no VS Code.
 
-Este projeto está licenciado sob a MIT License. Veja o arquivo LICENSE para mais detalhes.
+Localize o arquivo main_application.py.
+
+Clique em Run Code (ou use Ctrl+F5).
+
+A janela principal da Cortana será aberta.
+
+🔹 Opção 2 – Rodando pelo terminal
+
+Se preferir rodar direto no terminal, vá até a pasta onde está o arquivo main_application.py e execute:
+
+ ```bash
+        cd namorada_virtual
+        python main_application.py
+ ```
+
+---
+
+## 🤝 Contribuições
+
+Contribuições são bem-vindas!\
+Abra uma _issue_ ou envie um _pull request_ com melhorias.
+
+---

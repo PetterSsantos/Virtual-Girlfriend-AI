@@ -126,21 +126,26 @@ class VirtualGirlfriendDB:
         conn.close()
         
         if result:
+            try:
+                traits = json.loads(result[2]) if result[2] else []
+            except (json.JSONDecodeError, TypeError):
+                traits = ['carinhosa', 'inteligente']
+            
             return {
-                'name': result[0],
-                'age': result[1],
-                'traits': json.loads(result[2]) if result[2] else [],
-                'hobbies': result[3],
-                'foods': result[4],
-                'fears': result[5],
-                'dreams': result[6]
+                'name': result[0] or 'Cortana',
+                'age': result[1] or 19,
+                'traits': traits,
+                'hobbies': result[3] or 'ler livros de romance, assistir séries, jogar Valorant, ouvir música indie',
+                'foods': result[4] or 'chocolate, pizza, sorvete de morango',
+                'fears': result[5] or 'filmes de terror, aranhas',
+                'dreams': result[6] or 'viajar pelo mundo, ter um café próprio, escrever um livro'
             }
         else:
             # Personalidade padrão
             return {
-                'name': 'Caroline',
-                'age': 20,
-                'traits': ['carinhosa', 'engraçada', 'inteligente', 'curiosa'],
+                'name': 'Cortana',
+                'age': 19,
+                'traits': ['carinhosa', 'engracada', 'inteligente', 'curiosa'],
                 'hobbies': 'ler livros de romance, assistir séries, jogar Valorant, ouvir música indie',
                 'foods': 'chocolate, pizza, sorvete de morango',
                 'fears': 'filmes de terror, aranhas',
@@ -218,7 +223,11 @@ class VirtualGirlfriendDB:
         conversations = []
         for row in cursor.fetchall():
             # Formatar data para exibição
-            conv_date = datetime.strptime(row[1], '%Y-%m-%d').date()
+            try:
+                conv_date = datetime.strptime(row[1], '%Y-%m-%d').date()
+            except ValueError:
+                conv_date = date.today()
+                
             today = date.today()
             
             if conv_date == today:
@@ -325,4 +334,100 @@ class VirtualGirlfriendDB:
             'total_messages': total_messages,
             'user_messages': user_messages,
             'ai_messages': ai_messages
+        }
+    
+    def cleanup_old_conversations(self, days_to_keep: int = 30):
+        """Remove conversas antigas além do período especificado"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cutoff_date = date.today() - datetime.timedelta(days=days_to_keep)
+        cutoff_str = cutoff_date.strftime('%Y-%m-%d')
+        
+        # Buscar IDs das conversas antigas
+        cursor.execute("SELECT id FROM conversations WHERE date < ?", (cutoff_str,))
+        old_conversations = cursor.fetchall()
+        
+        # Deletar mensagens das conversas antigas
+        for conv_id in old_conversations:
+            cursor.execute("DELETE FROM messages WHERE conversation_id = ?", (conv_id[0],))
+        
+        # Deletar conversas antigas
+        cursor.execute("DELETE FROM conversations WHERE date < ?", (cutoff_str,))
+        
+        conn.commit()
+        conn.close()
+        
+        return len(old_conversations)
+    
+    def backup_database(self, backup_path: str = None):
+        """Cria backup do banco de dados"""
+        if backup_path is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = f"backup_virtual_girlfriend_{timestamp}.db"
+        
+        try:
+            # Conectar ao banco original
+            source = sqlite3.connect(self.db_path)
+            
+            # Criar backup
+            backup = sqlite3.connect(backup_path)
+            source.backup(backup)
+            
+            backup.close()
+            source.close()
+            
+            return backup_path
+        except Exception as e:
+            raise Exception(f"Erro ao criar backup: {str(e)}")
+    
+    def restore_from_backup(self, backup_path: str):
+        """Restaura banco de dados de um backup"""
+        if not os.path.exists(backup_path):
+            raise FileNotFoundError(f"Arquivo de backup não encontrado: {backup_path}")
+        
+        try:
+            # Fazer backup do arquivo atual
+            current_backup = self.backup_database(f"current_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db")
+            
+            # Conectar ao backup
+            backup = sqlite3.connect(backup_path)
+            
+            # Conectar ao banco atual
+            current = sqlite3.connect(self.db_path)
+            
+            # Restaurar
+            backup.backup(current)
+            
+            current.close()
+            backup.close()
+            
+            return current_backup
+        except Exception as e:
+            raise Exception(f"Erro ao restaurar backup: {str(e)}")
+    
+    def get_database_info(self) -> Dict[str, Any]:
+        """Retorna informações sobre o banco de dados"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Tamanho do arquivo
+        file_size = os.path.getsize(self.db_path) / (1024 * 1024)  # MB
+        
+        # Informações das tabelas
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+        
+        table_info = {}
+        for table in tables:
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            table_info[table] = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return {
+            'file_path': self.db_path,
+            'file_size_mb': round(file_size, 2),
+            'tables': table_info,
+            'last_modified': datetime.fromtimestamp(os.path.getmtime(self.db_path))
         }

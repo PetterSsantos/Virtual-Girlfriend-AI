@@ -1,18 +1,18 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, filedialog
 import threading
 import json
 import os
-from datetime import datetime, date
 import random
 import webbrowser
+from datetime import datetime, date
 from typing import Dict, List, Any
 
 
-# Imports dos módulos que criamos
-from namorada_virtual.src.services.database_system import VirtualGirlfriendDB
-from namorada_virtual.src.services.ai_personality_system import PersonalityAI
-from namorada_virtual.src.services.personal_agent_system import PersonalAgent
+# Imports dos módulos locais (assumindo que estão no mesmo diretório)
+from src.services.database_system import VirtualGirlfriendDB
+from src.services.ai_personality_system import PersonalityAI
+from src.services.personal_agent_system import PersonalAgent
 
 class VirtualGirlfriendApp:
     def __init__(self):
@@ -66,18 +66,14 @@ class VirtualGirlfriendApp:
         """Cria a janela principal moderna"""
         self.root = tk.Tk()
         self.root.title("💕 Virtual Girlfriend AI - Sua Companheira Inteligente")
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 700)
-        
-        # Configurar estilo moderno
-        style = ttk.Style()
-        style.theme_use('clam')
+        self.root.geometry("1280x1000")
+        self.root.minsize(1000, 800)
         
         # Cores modernas
         self.colors = {
             'bg_primary': '#f8f9fa',
             'bg_secondary': '#e9ecef',
-            'accent': '#667eea',
+            'accent': "#292f49",
             'accent_hover': '#5a6fd8',
             'text_primary': '#212529',
             'text_secondary': '#6c757d',
@@ -127,13 +123,11 @@ class VirtualGirlfriendApp:
         menubar.add_cascade(label="Agente", menu=agent_menu)
         agent_menu.add_command(label="Ativar/Desativar Agente (F1)", command=self.toggle_agent_mode)
         agent_menu.add_command(label="Status do Sistema", command=self.show_system_status)
-        agent_menu.add_command(label="Sugestões de Produtividade", command=self.show_productivity_tips)
         
         # Menu Ajuda
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Ajuda", menu=help_menu)
         help_menu.add_command(label="Como Usar", command=self.show_help)
-        help_menu.add_command(label="Atalhos", command=self.show_shortcuts)
         help_menu.add_command(label="Sobre", command=self.show_about)
     
     def create_layout(self):
@@ -164,7 +158,7 @@ class VirtualGirlfriendApp:
         header.pack(fill=tk.X)
         header.pack_propagate(False)
         
-        title_label = tk.Label(header, text="💕 Conversas", 
+        title_label = tk.Label(header, text="💕 Configurações", 
                               font=('Segoe UI', 14, 'bold'), 
                               fg='white', bg=self.colors['accent'])
         title_label.pack(pady=15)
@@ -173,44 +167,18 @@ class VirtualGirlfriendApp:
         self.sidebar_notebook = ttk.Notebook(sidebar)
         self.sidebar_notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Tab Conversas
-        self.create_conversations_tab()
-        
         # Tab Personalidade
         self.create_personality_tab()
         
         # Tab Agente
         self.create_agent_tab()
     
-    def create_conversations_tab(self):
-        """Cria tab de conversas"""
-        conv_frame = tk.Frame(self.sidebar_notebook)
-        self.sidebar_notebook.add(conv_frame, text="Conversas")
-        
-        # Lista de conversas
-        self.conversations_listbox = tk.Listbox(conv_frame, font=('Segoe UI', 10),
-                                               selectmode=tk.SINGLE, height=15)
-        self.conversations_listbox.pack(fill=tk.BOTH, expand=True, pady=10)
-        self.conversations_listbox.bind('<<ListboxSelect>>', self.on_conversation_select)
-        
-        # Botões
-        btn_frame = tk.Frame(conv_frame)
-        btn_frame.pack(fill=tk.X, pady=5)
-        
-        tk.Button(btn_frame, text="Nova Conversa", command=self.new_conversation,
-                 bg=self.colors['accent'], fg='white', font=('Segoe UI', 9, 'bold')).pack(fill=tk.X, pady=2)
-        
-        tk.Button(btn_frame, text="Excluir Conversa", command=self.delete_conversation,
-                 bg=self.colors['danger'], fg='white', font=('Segoe UI', 9)).pack(fill=tk.X, pady=2)
-        
-        self.update_conversations_list()
-    
     def create_personality_tab(self):
         """Cria tab de personalidade"""
         pers_frame = tk.Frame(self.sidebar_notebook)
         self.sidebar_notebook.add(pers_frame, text="Personalidade")
         
-        # Scroll frame para o formulário
+        # Canvas com scrollbar para o formulário
         canvas = tk.Canvas(pers_frame)
         scrollbar = ttk.Scrollbar(pers_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas)
@@ -272,7 +240,8 @@ class VirtualGirlfriendApp:
         
         # Botão salvar
         tk.Button(parent, text="Salvar Personalidade", command=self.save_personality,
-                 bg=self.colors['success'], fg='white', font=('Segoe UI', 10, 'bold')).pack(fill=tk.X, pady=10)
+                 bg=self.colors['success'], fg='white', font=('Segoe UI', 10, 'bold')).pack(fill=tk.X, side=tk.LEFT, pady=10,)
+         
         
         # Carregar personalidade atual
         self.load_personality_form()
@@ -301,8 +270,7 @@ class VirtualGirlfriendApp:
         quick_commands = [
             ("Status do Sistema", self.show_system_status),
             ("Screenshot", self.take_screenshot),
-            ("Modo Foco", self.activate_focus_mode),
-            ("Limpeza Sistema", self.system_cleanup)
+            ("Modo Foco", self.activate_focus_mode)
         ]
         
         for cmd_name, cmd_func in quick_commands:
@@ -352,7 +320,7 @@ class VirtualGirlfriendApp:
     def create_messages_area(self, parent):
         """Cria área de mensagens"""
         messages_frame = tk.Frame(parent)
-        messages_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        messages_frame.pack(fill=tk.BOTH, expand=True)
         
         # ScrolledText para as mensagens
         self.messages_text = scrolledtext.ScrolledText(
@@ -377,32 +345,24 @@ class VirtualGirlfriendApp:
             foreground='white', 
             background=self.colors['accent'],
             relief='flat',
-            borderwidth=0,
-            rmargin=50,
-            justify='right'
+            font=('Segoe UI', 11)
         )
         
         self.messages_text.tag_configure('ai', 
             foreground=self.colors['text_primary'], 
             background='white',
-            relief='solid',
-            borderwidth=1,
-            lmargin1=0,
-            lmargin2=0,
-            rmargin=50
+            font=('Segoe UI', 11)
         )
         
         self.messages_text.tag_configure('system', 
             foreground=self.colors['text_secondary'], 
             background=self.colors['bg_secondary'],
-            font=('Segoe UI', 10, 'italic'),
-            justify='center'
+            font=('Segoe UI', 10, 'italic')
         )
         
         self.messages_text.tag_configure('timestamp', 
             foreground=self.colors['text_secondary'], 
-            font=('Segoe UI', 8),
-            justify='right'
+            font=('Segoe UI', 8)
         )
     
     def create_input_area(self, parent):
@@ -443,7 +403,6 @@ class VirtualGirlfriendApp:
         
         # Bind para Enter
         self.message_input.bind('<Control-Return>', lambda e: self.send_message())
-        self.message_input.bind('<KeyRelease>', self.on_input_change)
         
         # Focus inicial
         self.message_input.focus()
@@ -459,14 +418,18 @@ class VirtualGirlfriendApp:
     
     def show_initial_message(self):
         """Mostra mensagem inicial da IA"""
-        initial_message = self.ai.generate_initial_message(self.current_personality)
+        try:
+            initial_message = self.ai.generate_initial_message(self.current_personality)
+        except:
+            initial_message = f"Oi! Eu sou a {self.current_personality['name']} 💕 Como você está hoje?"
+        
         self.add_message(initial_message, 'ai')
     
     def load_conversation_history(self):
         """Carrega histórico da conversa atual"""
         messages = self.db.get_conversation_history(self.current_conversation_id)
         
-        for msg in messages:
+        for msg in messages[-20:]:  # Últimas 20 mensagens
             self.add_message(msg['message'], msg['sender'], show_timestamp=False)
     
     def add_message(self, text: str, sender: str, show_timestamp: bool = True):
@@ -515,8 +478,6 @@ class VirtualGirlfriendApp:
                 # Verificar se é comando do agente
                 if self.agent_mode and self.agent.can_execute_command(message):
                     response, success = self.agent.execute_command(message, self.current_personality)
-                    self.add_message(response, 'ai')
-                    self.db.save_message(self.current_conversation_id, 'ai', response)
                 else:
                     # Gerar resposta da IA
                     conversation_history = self.db.get_recent_messages(self.current_conversation_id, 10)
@@ -526,21 +487,22 @@ class VirtualGirlfriendApp:
                         message, 
                         self.agent_mode
                     )
-                    
-                    self.add_message(response, 'ai')
-                    self.db.save_message(self.current_conversation_id, 'ai', response)
+                
+                self.root.after(0, lambda: self.display_response(response))
                 
             except Exception as e:
-                error_msg = f"Ops, tive um probleminha técnico... 😅 Pode tentar de novo? (Erro: {str(e)})"
-                self.add_message(error_msg, 'ai')
-            
-            finally:
-                # Reativar interface
-                self.root.after(0, self.reset_input_state)
+                error_msg = f"Ops, tive um probleminha técnico... 😅 Pode tentar de novo?"
+                self.root.after(0, lambda: self.display_response(error_msg))
         
         thread = threading.Thread(target=process_response)
         thread.daemon = True
         thread.start()
+    
+    def display_response(self, response):
+        """Exibe resposta da IA"""
+        self.add_message(response, 'ai')
+        self.db.save_message(self.current_conversation_id, 'ai', response)
+        self.reset_input_state()
     
     def reset_input_state(self):
         """Reseta estado da interface de entrada"""
@@ -548,33 +510,23 @@ class VirtualGirlfriendApp:
         self.send_button.config(state=tk.NORMAL, text="Enviar\n(Ctrl+Enter)")
         self.message_input.focus()
     
-    def on_input_change(self, event):
-        """Callback para mudanças na entrada de texto"""
-        # Auto-resize do texto de entrada
-        content = self.message_input.get("1.0", tk.END)
-        lines = content.count('\n')
-        height = min(max(lines + 1, 3), 8)  # Entre 3 e 8 linhas
-        self.message_input.config(height=height)
-    
     def toggle_agent_mode(self):
         """Alterna modo agente"""
         self.agent_mode = not self.agent_mode
         
         if self.agent_mode:
-            self.agent_status_label.config(text="🟢 Ativo", fg=self.colors['success'])
+            self.agent_status_label.config(text="🟢 Ativo")
             self.agent_indicator.config(text="🤖 Agente: Ativo")
             self.toggle_agent_btn.config(text="Desativar Agente", bg=self.colors['danger'])
             
-            # Mensagem de ativação
-            agent_msg = f"🤖 Modo Agente Pessoal ativado! Agora posso te ajudar com tarefas do computador, {self.current_personality['name']} está aqui para tudo que precisar! ✨"
+            agent_msg = f"🤖 Modo Agente Pessoal ativado! Agora posso te ajudar com tarefas do computador!"
             self.add_message(agent_msg, 'system')
         else:
-            self.agent_status_label.config(text="🔴 Inativo", fg=self.colors['danger'])
+            self.agent_status_label.config(text="🔴 Inativo")
             self.agent_indicator.config(text="🤖 Agente: Inativo")
             self.toggle_agent_btn.config(text="Ativar Agente", bg=self.colors['accent'])
             
-            # Mensagem de desativação
-            agent_msg = f"💕 Modo Agente Pessoal desativado. Voltando ao modo conversa normal com {self.current_personality['name']}!"
+            agent_msg = f"💕 Modo Agente Pessoal desativado. Voltando ao modo conversa normal!"
             self.add_message(agent_msg, 'system')
     
     def save_personality(self):
@@ -582,7 +534,7 @@ class VirtualGirlfriendApp:
         try:
             # Coletar dados do formulário
             personality_data = {
-                'name': self.name_entry.get().strip() or 'Amanda',
+                'name': self.name_entry.get().strip() or 'Cortana',
                 'age': int(self.age_entry.get()) if self.age_entry.get().isdigit() else 19,
                 'traits': [trait for trait, var in self.trait_vars.items() if var.get()],
                 'hobbies': self.hobbies_text.get("1.0", tk.END).strip(),
@@ -623,22 +575,6 @@ class VirtualGirlfriendApp:
         self.fears_text.insert("1.0", self.current_personality['fears'])
         self.dreams_text.insert("1.0", self.current_personality['dreams'])
     
-    def update_conversations_list(self):
-        """Atualiza lista de conversas"""
-        self.conversations_listbox.delete(0, tk.END)
-        conversations = self.db.get_all_conversations()
-        
-        for conv in conversations:
-            display_text = f"{conv['date_display']} - {conv['last_message'][:30]}..."
-            self.conversations_listbox.insert(tk.END, display_text)
-    
-    def on_conversation_select(self, event):
-        """Callback para seleção de conversa"""
-        selection = self.conversations_listbox.curselection()
-        if selection:
-            # Implementar mudança de conversa
-            pass
-    
     def new_conversation(self):
         """Inicia nova conversa"""
         self.current_conversation_id = self.db.get_or_create_today_conversation()
@@ -647,59 +583,32 @@ class VirtualGirlfriendApp:
         self.messages_text.config(state=tk.DISABLED)
         
         self.show_initial_message()
-        self.update_conversations_list()
-        
         self.add_message("Nova conversa iniciada! 🎉", 'system')
-    
-    def delete_conversation(self):
-        """Deleta conversa selecionada"""
-        selection = self.conversations_listbox.curselection()
-        if selection:
-            if messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esta conversa?"):
-                # Implementar exclusão
-                self.update_conversations_list()
     
     # Comandos do agente
     def show_system_status(self):
         """Mostra status do sistema"""
-        if hasattr(self, 'agent'):
+        try:
             status = self.agent._get_system_status()
             self.add_message(status, 'system')
-        else:
+        except:
             self.add_message("Agente não disponível.", 'system')
     
     def take_screenshot(self):
         """Tira screenshot"""
-        if hasattr(self, 'agent'):
+        try:
             result = self.agent._take_screenshot()
             self.add_message(result, 'system')
-        else:
-            self.add_message("Agente não disponível.", 'system')
+        except:
+            self.add_message("Não foi possível tirar screenshot.", 'system')
     
     def activate_focus_mode(self):
         """Ativa modo foco"""
-        if hasattr(self, 'agent'):
+        try:
             result = self.agent.execute_macro('foco')
             self.add_message(result, 'system')
-        else:
-            self.add_message("Agente não disponível.", 'system')
-    
-    def system_cleanup(self):
-        """Inicia limpeza do sistema"""
-        if hasattr(self, 'agent'):
-            result = self.agent.execute_macro('limpeza')
-            self.add_message(result, 'system')
-        else:
-            self.add_message("Agente não disponível.", 'system')
-    
-    def show_productivity_tips(self):
-        """Mostra dicas de produtividade"""
-        if hasattr(self, 'agent'):
-            suggestions = self.agent.get_productivity_suggestions()
-            for tip in suggestions:
-                self.add_message(tip, 'system')
-        else:
-            self.add_message("Agente não disponível.", 'system')
+        except:
+            self.add_message("Modo foco não disponível.", 'system')
     
     # Dialogs e janelas auxiliares
     def open_settings(self):
@@ -719,19 +628,8 @@ class VirtualGirlfriendApp:
         api_entry.pack(padx=20, pady=(0, 10))
         api_entry.insert(0, self.config.get('gemini_api_key', ''))
         
-        # Outras configurações
-        auto_save_var = tk.BooleanVar(value=self.config.get('auto_save', True))
-        tk.Checkbutton(settings_window, text="Salvar automaticamente", 
-                      variable=auto_save_var, font=('Segoe UI', 10)).pack(anchor='w', padx=20, pady=5)
-        
-        notifications_var = tk.BooleanVar(value=self.config.get('notifications', True))
-        tk.Checkbutton(settings_window, text="Ativar notificações", 
-                      variable=notifications_var, font=('Segoe UI', 10)).pack(anchor='w', padx=20, pady=5)
-        
         def save_settings():
             self.config['gemini_api_key'] = api_entry.get()
-            self.config['auto_save'] = auto_save_var.get()
-            self.config['notifications'] = notifications_var.get()
             self.save_config()
             
             # Reconfigurar AI se necessário
@@ -745,8 +643,8 @@ class VirtualGirlfriendApp:
                  bg=self.colors['success'], fg='white', font=('Segoe UI', 10, 'bold')).pack(pady=20)
     
     def open_personality_editor(self):
-        """Abre editor de personalidade em janela separada"""
-        self.sidebar_notebook.select(1)  # Seleciona tab personalidade
+        """Abre editor de personalidade"""
+        self.sidebar_notebook.select(0)  # Seleciona tab personalidade
     
     def reset_personality(self):
         """Reseta personalidade para padrão"""
@@ -762,7 +660,7 @@ class VirtualGirlfriendApp:
             
             # Carregar valores padrão
             default_personality = {
-                'name': 'Amanda',
+                'name': 'Cortana',
                 'age': 19,
                 'traits': ['carinhosa', 'engracada', 'inteligente', 'curiosa'],
                 'hobbies': 'ler livros de romance, assistir séries, jogar Valorant, ouvir música indie',
@@ -777,8 +675,6 @@ class VirtualGirlfriendApp:
     
     def export_conversation(self):
         """Exporta conversa atual"""
-        from tkinter import filedialog
-        
         filename = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Arquivos de texto", "*.txt"), ("Todos os arquivos", "*.*")]
@@ -819,23 +715,9 @@ class VirtualGirlfriendApp:
 ⌨️ ATALHOS:
 - Ctrl+Enter: Enviar mensagem
 - F1: Ativar/Desativar Agente
-- Ctrl+N: Nova conversa
 """
         
         messagebox.showinfo("Ajuda", help_text)
-    
-    def show_shortcuts(self):
-        """Mostra atalhos do teclado"""
-        shortcuts_text = """=== Atalhos do Teclado ===
-
-Ctrl + Enter - Enviar mensagem
-F1 - Ativar/Desativar Modo Agente
-Ctrl + N - Nova conversa
-Ctrl + S - Salvar configurações
-Ctrl + E - Exportar conversa
-Ctrl + Q - Sair do programa
-"""
-        messagebox.showinfo("Atalhos", shortcuts_text)
     
     def show_about(self):
         """Mostra informações sobre o programa"""
@@ -847,7 +729,7 @@ customizável e funcionalidades de agente pessoal.
 Características:
 • IA conversacional realística
 • Personalidade 100% customizável  
-• Modo agente pessoal (Jarvis)
+• Modo agente pessoal
 • Conversas salvas por data
 • Interface moderna e intuitiva
 • Sistema de banco de dados integrado
@@ -880,3 +762,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Erro crítico: {e}")
         messagebox.showerror("Erro Crítico", f"Erro ao iniciar aplicação: {str(e)}")
+

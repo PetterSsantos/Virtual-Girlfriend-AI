@@ -1,23 +1,43 @@
-import google.generativeai as genai
 import random
 import json
 from datetime import datetime, time
 from typing import Dict, List, Any
 import re
 
+# Import condicional do Google Generative AI
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+
 class PersonalityAI:
     def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.api_key = api_key
         
-        # Configurações mais naturais para respostas realísticas
-        self.generation_config = genai.types.GenerationConfig(
-            max_output_tokens=250,
-            temperature=0.85,  # Mais criativa mas controlada
-            top_p=0.9,
-            top_k=50,
-            candidate_count=1,
-        )
+        if GEMINI_AVAILABLE and api_key:
+            try:
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # Configurações para respostas realísticas
+                self.generation_config = genai.types.GenerationConfig(
+                    max_output_tokens=250,
+                    temperature=0.85,
+                    top_p=0.9,
+                    top_k=50,
+                    candidate_count=1,
+                )
+                self.use_ai = True
+            except Exception as e:
+                print(f"Erro ao configurar Gemini: {e}")
+                self.use_ai = False
+        else:
+            self.use_ai = False
+            if not GEMINI_AVAILABLE:
+                print("Google Generative AI não está disponível. Usando respostas padrão.")
+            if not api_key:
+                print("API Key não fornecida. Usando respostas padrão.")
     
     def generate_realistic_prompt(self, personality: Dict[str, Any], conversation_history: List[Dict[str, str]], 
                                 user_message: str, agent_mode: bool = False) -> str:
@@ -49,7 +69,7 @@ class PersonalityAI:
         context_text = "\n".join(context_messages) if context_messages else "Primeira interação do dia"
         
         # Traços de personalidade formatados
-        traits_text = ", ".join(personality['traits'])
+        traits_text = ", ".join(personality['traits']) if personality['traits'] else "carinhosa, inteligente"
         
         # Sistema de humor baseado no histórico
         conversation_mood = self._analyze_conversation_mood(conversation_history)
@@ -60,10 +80,10 @@ Você é {personality['name']}, {personality['age']} anos. Você é uma pessoa r
 
 PERSONALIDADE CORE:
 - Traços principais: {traits_text}
-- Hobbies: {personality['hobbies']}
-- Comidas favoritas: {personality['foods']}
-- Medos: {personality['fears']}
-- Sonhos: {personality['dreams']}
+- Hobbies: {personality.get('hobbies', 'conversar e se divertir')}
+- Comidas favoritas: {personality.get('foods', 'pizza e chocolate')}
+- Medos: {personality.get('fears', 'solidão')}
+- Sonhos: {personality.get('dreams', 'ser feliz e ter bons momentos')}
 
 CONTEXTO SITUACIONAL:
 - Período: {time_context} (você está {mood_modifier})
@@ -154,24 +174,28 @@ RESPOSTA DE {personality['name'].upper()}:"""
                          user_message: str, agent_mode: bool = False) -> str:
         """Gera uma resposta da IA baseada na personalidade e contexto"""
         
-        try:
-            prompt = self.generate_realistic_prompt(personality, conversation_history, user_message, agent_mode)
-            
-            response = self.model.generate_content(
-                prompt,
-                generation_config=self.generation_config
-            )
-            
-            # Processar e limpar a resposta
-            ai_response = response.text.strip()
-            ai_response = self._post_process_response(ai_response, personality['name'])
-            
-            return ai_response
-            
-        except Exception as e:
-            print(f"Erro na geração de resposta: {e}")
-            # Resposta de fallback baseada na personalidade
-            return self._generate_fallback_response(personality, user_message)
+        if self.use_ai:
+            try:
+                prompt = self.generate_realistic_prompt(personality, conversation_history, user_message, agent_mode)
+                
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config=self.generation_config
+                )
+                
+                # Processar e limpar a resposta
+                ai_response = response.text.strip()
+                ai_response = self._post_process_response(ai_response, personality['name'])
+                
+                return ai_response
+                
+            except Exception as e:
+                print(f"Erro na geração de resposta: {e}")
+                # Fallback para resposta padrão
+                return self._generate_fallback_response(personality, user_message)
+        else:
+            # Usar sistema de respostas padrão
+            return self._generate_pattern_response(personality, conversation_history, user_message, agent_mode)
     
     def _post_process_response(self, response: str, name: str) -> str:
         """Pós-processa a resposta para torná-la mais natural"""
@@ -206,14 +230,97 @@ RESPOSTA DE {personality['name'].upper()}:"""
         
         return random.choice(fallback_responses)
     
+    def _generate_pattern_response(self, personality: Dict[str, Any], conversation_history: List[Dict[str, str]], 
+                                   user_message: str, agent_mode: bool = False) -> str:
+        """Gera resposta baseada em padrões quando não há IA disponível"""
+        
+        name = personality.get('name', 'Amanda')
+        traits = personality.get('traits', ['carinhosa', 'inteligente'])
+        
+        message_lower = user_message.lower()
+        
+        # Respostas baseadas em padrões comuns
+        if any(word in message_lower for word in ['oi', 'olá', 'hey', 'e aí']):
+            greetings = [
+                f"Oi! Como você tá? 😊",
+                f"Hey! Que bom te ver!",
+                f"Olá! Como foi seu dia?",
+                f"E aí! Tudo bem contigo?"
+            ]
+            return random.choice(greetings)
+        
+        elif any(word in message_lower for word in ['como', 'tá', 'está', 'vai']):
+            status_responses = [
+                "Tô bem! E você?",
+                "Tudo ótimo por aqui! Como você tá?",
+                "Bem demais! Me conta como você está",
+                "Tô super bem! E aí, como anda a vida?"
+            ]
+            return random.choice(status_responses)
+        
+        elif any(word in message_lower for word in ['obrigado', 'obrigada', 'valeu', 'thanks']):
+            thanks_responses = [
+                "De nada! 😊",
+                "Imagina! Tô aqui pra isso",
+                "Sempre às ordens!",
+                "Por nada! Adorei ajudar"
+            ]
+            return random.choice(thanks_responses)
+        
+        elif any(word in message_lower for word in ['tchau', 'bye', 'até', 'fui']):
+            goodbye_responses = [
+                "Tchau! Até mais! 💕",
+                "Até logo! Cuida-se!",
+                "Bye! Foi ótimo conversar contigo!",
+                "Até a próxima! 😘"
+            ]
+            return random.choice(goodbye_responses)
+        
+        elif '?' in user_message:
+            # Resposta para perguntas
+            question_responses = [
+                "Interessante pergunta! O que você acha?",
+                "Hmm, deixa eu pensar... e você, o que pensa sobre isso?",
+                "Boa pergunta! Me conta sua opinião primeiro",
+                "Nossa, nunca parei pra pensar nisso... qual sua visão?"
+            ]
+            return random.choice(question_responses)
+        
+        else:
+            # Respostas gerais baseadas na personalidade
+            if 'carinhosa' in traits:
+                general_responses = [
+                    "Que interessante! Conta mais 😊",
+                    "Adorei saber disso! Me fala mais",
+                    "Que legal! Como você se sente sobre isso?",
+                    "Nossa, que bacana! E aí, como foi?"
+                ]
+            elif 'engracada' in traits:
+                general_responses = [
+                    "Haha, sério? Conta mais!",
+                    "Que história é essa? 😄",
+                    "Eita, que situação! E depois?",
+                    "Não acredito! Como assim?"
+                ]
+            else:
+                general_responses = [
+                    "Entendi... e como você vê isso?",
+                    "Interessante perspectiva. Conta mais",
+                    "Hmm, faz sentido. O que mais?",
+                    "Compreendo. Como se sente sobre isso?"
+                ]
+            
+            return random.choice(general_responses)
+    
     def generate_initial_message(self, personality: Dict[str, Any]) -> str:
         """Gera uma mensagem inicial personalizada"""
         
+        name = personality.get('name', 'Amanda')
         hour = datetime.now().hour
         
         if 5 <= hour < 12:
             greetings = [
-                f"Bom dia, amor! 😊 Como você dormiu?",
+                f"Bom dia! 😊 Como você dormiu?",
                 f"Oi! Acordou bem hoje?",
                 f"Morning! Já tomou café? ☕",
             ]
@@ -221,7 +328,7 @@ RESPOSTA DE {personality['name'].upper()}:"""
             greetings = [
                 f"Oi! Como tá sendo seu dia?",
                 f"E aí, como anda a tarde? 😄",
-                f"Oi amor! Me conta como foi a manhã!",
+                f"Oi! Me conta como foi a manhã!",
             ]
         elif 18 <= hour < 23:
             greetings = [
