@@ -4,129 +4,555 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual Girlfriend - AI Companion</title>
-   <link rel="stylesheet" href="/namorada_virtual/src/static/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            max-width: 100%;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #495057;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .agent-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .agent-toggle.active {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #28a745;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(25px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .traits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .trait-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .trait-item:hover {
+            background: #e9ecef;
+        }
+
+        .trait-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 25px;
+            max-width: 80%;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        .message-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .message.ai .message-content::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-right: 10px solid white;
+            border-bottom: 10px solid transparent;
+        }
+
+        .message.user .message-content::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: -10px;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-left: 10px solid #667eea;
+            border-bottom: 10px solid transparent;
+        }
+
+        .input-container {
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            resize: none;
+            max-height: 120px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Scrollbar personalizada */
+        .tab-content::-webkit-scrollbar,
+        .messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tab-content::-webkit-scrollbar-track,
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb,
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb:hover,
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40vh;
+            }
+            
+            .chat-container {
+                height: 60vh;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">💕 Virtual Girlfriend AI</div>
-            <div class="subtitle">Sua companheira virtual personalizada</div>
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>💕 Virtual Girlfriend AI</h1>
+                <p>Sua companheira virtual personalizada</p>
+            </div>
+            
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('personality')">Personalizar</button>
+                <button class="tab-btn" onclick="switchTab('chats')">Conversas</button>
+            </div>
+            
+            <div id="personality" class="tab-content active">
+                <div class="agent-toggle" onclick="toggleAgent(this)">
+                    <span>Modo Agente Pessoal</span>
+                    <div class="toggle-switch"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" id="companion-name" value="Amanda" placeholder="Nome da sua companheira">
+                </div>
+                
+                <div class="form-group">
+                    <label>Idade</label>
+                    <input type="number" id="companion-age" value="19" min="18" max="50">
+                </div>
+                
+                <div class="form-group">
+                    <label>Personalidade</label>
+                    <div class="traits-grid">
+                        <div class="trait-item">
+                            <input type="checkbox" id="carinhosa" checked>
+                            <label for="carinhosa">Carinhosa</label>
+                        </div>
+                        <div class="trait-item">
+                            <input type="checkbox" id="timida">
+                            <label for="timida">Tímida</label>
+                        </div>
+                        <div class="trait-item">
+                            <input type="checkbox" id="engracada" checked>
+                            <label for="engracada">Engraçada</label>
+                        </div>
+                        <div class="trait-item">
+                            <input type="checkbox" id="inteligente" checked>
+                            <label for="inteligente">Inteligente</label>
+                        </div>
+                        <div class="trait-item">
+                            <input type="checkbox" id="curiosa" checked>
+                            <label for="curiosa">Curiosa</label>
+                        </div>
+                        <div class="trait-item">
+                            <input type="checkbox" id="brincalhona">
+                            <label for="brincalhona">Brincalhona</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Hobbies</label>
+                    <textarea id="hobbies" rows="3" placeholder="Ex: ler livros, assistir filmes, jogar videogame">ler livros de romance, assistir séries, jogar Valorant, ouvir música indie</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Comidas Favoritas</label>
+                    <input type="text" id="foods" value="chocolate, pizza, sorvete de morango" placeholder="Ex: pizza, chocolate, sushi">
+                </div>
+                
+                <div class="form-group">
+                    <label>Medos</label>
+                    <input type="text" id="fears" value="filmes de terror, aranhas" placeholder="Ex: aranhas, altura, escuro">
+                </div>
+                
+                <div class="form-group">
+                    <label>Sonhos e Objetivos</label>
+                    <textarea id="dreams" rows="3" placeholder="Ex: viajar pelo mundo, abrir um negócio">viajar pelo mundo, ter um café próprio, escrever um livro</textarea>
+                </div>
+                
+                <button class="save-btn" onclick="savePersonality()">Salvar Personalização</button>
+            </div>
+            
+            <div id="chats" class="tab-content">
+                <div class="chats-list" id="chatsList">
+                    <p style="text-align: center; color: #6c757d; margin-top: 50px;">
+                        Conversas aparecerão aqui quando você começar a conversar
+                    </p>
+                </div>
+            </div>
         </div>
         
-        <div class="main-content">
-            <div class="sidebar">
-                <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="switchTab('personality')">Personalizar</button>
-                    <button class="tab-btn" onclick="switchTab('chats')">Conversas</button>
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2 id="companion-header">💕 Amanda</h2>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Online</span>
                 </div>
-                
-                <div id="personality" class="tab-content active">
-                    <div class="agent-toggle">
-                        <span>Modo Agente Pessoal</span>
-                        <div class="toggle-switch" onclick="toggleAgent(this)"></div>
-                    </div>
-                    
-                    <div class="personality-form">
-                        <div class="form-group">
-                            <label>Nome</label>
-                            <input type="text" id="companion-name" value="Amanda" placeholder="Nome da sua companheira">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Idade</label>
-                            <input type="number" id="companion-age" value="19" min="18" max="50">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Personalidade</label>
-                            <div class="traits-grid">
-                                <div class="trait-item">
-                                    <input type="checkbox" id="carinhosa" checked>
-                                    <label for="carinhosa">Carinhosa</label>
-                                </div>
-                                <div class="trait-item">
-                                    <input type="checkbox" id="timida">
-                                    <label for="timida">Tímida</label>
-                                </div>
-                                <div class="trait-item">
-                                    <input type="checkbox" id="engracada" checked>
-                                    <label for="engracada">Engraçada</label>
-                                </div>
-                                <div class="trait-item">
-                                    <input type="checkbox" id="inteligente" checked>
-                                    <label for="inteligente">Inteligente</label>
-                                </div>
-                                <div class="trait-item">
-                                    <input type="checkbox" id="curiosa" checked>
-                                    <label for="curiosa">Curiosa</label>
-                                </div>
-                                <div class="trait-item">
-                                    <input type="checkbox" id="brincalhona">
-                                    <label for="brincalhona">Brincalhona</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Hobbies (separados por vírgula)</label>
-                            <textarea id="hobbies" placeholder="Ex: ler livros, assistir filmes, jogar videogame">ler livros de romance, assistir séries, jogar Valorant, ouvir música indie</textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Comidas Favoritas</label>
-                            <input type="text" id="foods" value="chocolate, pizza, sorvete de morango" placeholder="Ex: pizza, chocolate, sushi">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Medos</label>
-                            <input type="text" id="fears" value="filmes de terror, aranhas" placeholder="Ex: aranhas, altura, escuro">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Sonhos e Objetivos</label>
-                            <textarea id="dreams" placeholder="Ex: viajar pelo mundo, abrir um negócio">viajar pelo mundo, ter um café próprio, escrever um livro</textarea>
-                        </div>
-                        
-                        <button class="save-btn" onclick="savePersonality()">Salvar Personalização</button>
-                    </div>
-                </div>
-                
-                <div id="chats" class="tab-content">
-                    <div class="chats-list" id="chatsList">
-                        <div class="chat-item active">
-                            <div class="chat-date">Hoje</div>
-                            <div class="chat-preview">Oi amor! Como foi seu dia?</div>
-                        </div>
-                        <div class="chat-item">
-                            <div class="chat-date">Ontem</div>
-                            <div class="chat-preview">Estava pensando em você...</div>
-                        </div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <div class="message ai">
+                    <div class="message-avatar">A</div>
+                    <div class="message-content">
+                        Oi! 💕 Que bom te ver aqui... Como foi seu dia?
                     </div>
                 </div>
             </div>
             
-            <div class="chat-container">
-                <div class="chat-header">
-                    <h2 id="companion-header">💕 Amanda</h2>
-                    <div class="status-indicator">
-                        <div class="status-dot"></div>
-                        <span>Online</span>
-                    </div>
-                </div>
-                
-                <div class="messages-container" id="messagesContainer">
-                    <div class="message ai">
-                        <div class="message-avatar">A</div>
-                        <div class="message-content">
-                            Oi amor! 💕 Que bom te ver aqui... Como foi seu dia?
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="input-container">
-                    <textarea class="message-input" id="messageInput" placeholder="Digite sua mensagem..." rows="1"></textarea>
-                    <button class="send-btn" onclick="sendMessage()">Enviar</button>
-                </div>
+            <div class="input-container">
+                <textarea class="message-input" id="messageInput" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                <button class="send-btn" onclick="sendMessage()">Enviar</button>
             </div>
         </div>
     </div>
@@ -147,16 +573,16 @@
         let currentChatId = Date.now();
         
         function switchTab(tabName) {
-            // Remove active class from all tabs
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Add active class to clicked tab
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
         }
         
         function toggleAgent(element) {
+            const toggle = element.querySelector('.toggle-switch');
+            toggle.classList.toggle('active');
             element.classList.toggle('active');
             agentMode = !agentMode;
             
@@ -168,38 +594,56 @@
         }
         
         function savePersonality() {
-            const name = document.getElementById('companion-name').value;
-            const age = document.getElementById('companion-age').value;
-            const hobbies = document.getElementById('hobbies').value;
-            const foods = document.getElementById('foods').value;
-            const fears = document.getElementById('fears').value;
-            const dreams = document.getElementById('dreams').value;
+            const name = document.getElementById('companion-name').value.trim();
+            const age = parseInt(document.getElementById('companion-age').value);
+            const hobbies = document.getElementById('hobbies').value.trim();
+            const foods = document.getElementById('foods').value.trim();
+            const fears = document.getElementById('fears').value.trim();
+            const dreams = document.getElementById('dreams').value.trim();
             
-            // Get selected traits
+            // Validações
+            if (!name) {
+                alert('Por favor, insira um nome para sua companheira.');
+                return;
+            }
+            
+            if (!age || age < 18 || age > 50) {
+                alert('Por favor, insira uma idade válida entre 18 e 50 anos.');
+                return;
+            }
+            
+            // Coletar traços selecionados
             const traits = [];
             document.querySelectorAll('.trait-item input[type="checkbox"]:checked').forEach(checkbox => {
                 traits.push(checkbox.id);
             });
             
+            if (traits.length === 0) {
+                alert('Por favor, selecione pelo menos um traço de personalidade.');
+                return;
+            }
+            
             currentPersonality = {
                 name, age, traits, hobbies, foods, fears, dreams
             };
             
-            // Update header
+            // Atualizar interface
             document.getElementById('companion-header').textContent = `💕 ${name}`;
             
-            // Add confirmation message
-            addSystemMessage(`Personalidade atualizada! ${name} agora tem as características que você definiu.`);
+            // Salvar no localStorage (simulação - no app real seria no banco)
+            localStorage.setItem('virtualGirlfriendPersonality', JSON.stringify(currentPersonality));
+            
+            // Mensagem de confirmação
+            addSystemMessage(`Personalidade atualizada! ${name} agora tem as características que você definiu. ✨`);
         }
         
         function addSystemMessage(text) {
             const messagesContainer = document.getElementById('messagesContainer');
             const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
             messageDiv.innerHTML = `
-                <div class="message ai">
-                    <div class="message-avatar">🔧</div>
-                    <div class="message-content">${text}</div>
-                </div>
+                <div class="message-avatar">🔧</div>
+                <div class="message-content">${text}</div>
             `;
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -211,15 +655,25 @@
             
             if (!message) return;
             
-            // Add user message to chat
+            // Desabilitar temporariamente o botão
+            const sendBtn = document.querySelector('.send-btn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Enviando...';
+            
+            // Adicionar mensagem do usuário
             addMessage(message, 'user');
             messageInput.value = '';
             
-            // Simulate AI response (you'll integrate with your AI API here)
+            // Simular resposta da IA (delay realístico)
             setTimeout(() => {
                 const response = generateResponse(message);
                 addMessage(response, 'ai');
-            }, 1000);
+                
+                // Reabilitar botão
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Enviar';
+                messageInput.focus();
+            }, 800 + Math.random() * 1200); // 0.8 a 2 segundos
         }
         
         function addMessage(text, sender) {
@@ -228,77 +682,182 @@
             
             const avatar = sender === 'user' ? 'U' : currentPersonality.name.charAt(0);
             
+            messageDiv.className = `message ${sender}`;
             messageDiv.innerHTML = `
-                <div class="message ${sender}">
-                    <div class="message-avatar">${avatar}</div>
-                    <div class="message-content">${text}</div>
-                </div>
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${text}</div>
             `;
             
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
-            // Save conversation to storage
+            // Salvar conversa
             saveConversation(text, sender);
         }
         
         function generateResponse(userMessage) {
-            // This is a placeholder - you'll integrate with your AI API
-            const responses = [
-                "Que interessante! Conte-me mais sobre isso 😊",
-                "Hmm, entendo... e como você se sente sobre isso?",
-                "Nossa, adorei saber disso! 💕",
-                "Que legal! Você sempre me surpreende 😄",
-                "Interessante perspectiva... o que mais você pensa sobre isso?"
-            ];
+            const message = userMessage.toLowerCase();
+            const traits = currentPersonality.traits;
+            const name = currentPersonality.name;
             
-            if (agentMode && (userMessage.toLowerCase().includes('computador') || userMessage.toLowerCase().includes('sistema'))) {
-                return "🤖 Como seu agente pessoal, posso te ajudar com isso! O que exatamente você gostaria que eu fizesse?";
+            // Respostas baseadas em padrões e personalidade
+            if (message.includes('oi') || message.includes('olá') || message.includes('hey')) {
+                const greetings = [
+                    "Oi! Como você tá? 😊",
+                    "Hey! Que bom te ver!",
+                    "Olá! Como foi seu dia?",
+                    "E aí! Tudo bem contigo?"
+                ];
+                return greetings[Math.floor(Math.random() * greetings.length)];
             }
             
-            return responses[Math.floor(Math.random() * responses.length)];
+            if (message.includes('como') && (message.includes('vai') || message.includes('está') || message.includes('tá'))) {
+                const statusResponses = [
+                    "Tô bem! E você?",
+                    "Tudo ótimo por aqui! Como você tá?",
+                    "Bem demais! Me conta como você está",
+                    "Tô super bem! E aí, como anda a vida?"
+                ];
+                return statusResponses[Math.floor(Math.random() * statusResponses.length)];
+            }
+            
+            if (message.includes('obrigado') || message.includes('obrigada') || message.includes('valeu')) {
+                const thankResponses = [
+                    "De nada! 😊",
+                    "Imagina! Tô aqui pra isso",
+                    "Sempre às ordens!",
+                    "Por nada! Adorei ajudar"
+                ];
+                return thankResponses[Math.floor(Math.random() * thankResponses.length)];
+            }
+            
+            if (agentMode && (message.includes('computador') || message.includes('sistema') || message.includes('abrir'))) {
+                const agentResponses = [
+                    "🤖 Como seu agente pessoal, posso te ajudar com isso! O que exatamente você gostaria que eu fizesse?",
+                    "🤖 Modo agente ativo! Qual tarefa do sistema você precisa de ajuda?",
+                    "🤖 Estou aqui para ajudar com questões técnicas! Me diga mais detalhes."
+                ];
+                return agentResponses[Math.floor(Math.random() * agentResponses.length)];
+            }
+            
+            // Respostas baseadas na personalidade
+            if (traits.includes('carinhosa')) {
+                const carinhoResponses = [
+                    "Que interessante! Conta mais 😊",
+                    "Adorei saber disso! Me fala mais",
+                    "Que legal! Como você se sente sobre isso?",
+                    "Nossa, que bacana! E aí, como foi?",
+                    "Aww, isso é tão fofo! 💕"
+                ];
+                return carinhoResponses[Math.floor(Math.random() * carinhoResponses.length)];
+            }
+            
+            if (traits.includes('engracada')) {
+                const funnyResponses = [
+                    "Haha, sério? Conta mais! 😄",
+                    "Que história é essa?",
+                    "Eita, que situação! E depois?",
+                    "Não acredito! Como assim?",
+                    "Você é muito engraçado! 😂"
+                ];
+                return funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
+            }
+            
+            if (traits.includes('curiosa')) {
+                const curiousResponses = [
+                    "Hmm, interessante! Me conta mais detalhes",
+                    "Nossa, que curioso! Como você descobriu isso?",
+                    "Que legal! E o que mais você sabe sobre isso?",
+                    "Fascinante! Onde você aprendeu isso?",
+                    "Sério? Preciso saber mais! 🤔"
+                ];
+                return curiousResponses[Math.floor(Math.random() * curiousResponses.length)];
+            }
+            
+            // Respostas gerais
+            const generalResponses = [
+                "Entendi... e como você vê isso?",
+                "Interessante perspectiva. Conta mais",
+                "Hmm, faz sentido. O que mais?",
+                "Compreendo. Como se sente sobre isso?",
+                "Nossa, que bacana! Me fala mais sobre isso",
+                "Que interessante! Nunca tinha pensado nisso"
+            ];
+            
+            return generalResponses[Math.floor(Math.random() * generalResponses.length)];
         }
         
         function saveConversation(message, sender) {
             const today = new Date().toDateString();
-            let todayChat = conversations.find(chat => chat.date === today);
+            let conversation = JSON.parse(localStorage.getItem('currentConversation') || '[]');
             
-            if (!todayChat) {
-                todayChat = {
-                    id: Date.now(),
-                    date: today,
-                    messages: []
-                };
-                conversations.push(todayChat);
-            }
-            
-            todayChat.messages.push({
+            conversation.push({
                 text: message,
                 sender: sender,
                 timestamp: new Date().toISOString()
             });
             
-            // Update chats list (simplified for demo)
-            updateChatsList();
+            localStorage.setItem('currentConversation', JSON.stringify(conversation));
         }
         
-        function updateChatsList() {
-            // This would update the chats sidebar with saved conversations
-            // Implementation would depend on your database choice
+        function loadPersonality() {
+            const saved = localStorage.getItem('virtualGirlfriendPersonality');
+            if (saved) {
+                currentPersonality = JSON.parse(saved);
+                
+                // Atualizar formulário
+                document.getElementById('companion-name').value = currentPersonality.name;
+                document.getElementById('companion-age').value = currentPersonality.age;
+                document.getElementById('hobbies').value = currentPersonality.hobbies;
+                document.getElementById('foods').value = currentPersonality.foods;
+                document.getElementById('fears').value = currentPersonality.fears;
+                document.getElementById('dreams').value = currentPersonality.dreams;
+                
+                // Atualizar traits
+                document.querySelectorAll('.trait-item input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = currentPersonality.traits.includes(checkbox.id);
+                });
+                
+                // Atualizar header
+                document.getElementById('companion-header').textContent = `💕 ${currentPersonality.name}`;
+            }
+        }
+        
+        function loadConversation() {
+            const saved = localStorage.getItem('currentConversation');
+            if (saved) {
+                const conversation = JSON.parse(saved);
+                const container = document.getElementById('messagesContainer');
+                
+                // Limpar mensagens iniciais
+                container.innerHTML = '';
+                
+                // Adicionar mensagens salvas
+                conversation.forEach(msg => {
+                    addMessage(msg.text, msg.sender);
+                });
+            }
         }
         
         // Auto-resize textarea
         document.getElementById('messageInput').addEventListener('input', function() {
             this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
         
-        // Send message on Enter
+        // Enviar mensagem com Enter
         document.getElementById('messageInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
+        });
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPersonality();
+            loadConversation();
+            document.getElementById('messageInput').focus();
         });
     </script>
 </body>

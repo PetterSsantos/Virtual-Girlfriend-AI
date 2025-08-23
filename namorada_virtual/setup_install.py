@@ -1,3 +1,13 @@
+"""
+Script de instalação e configuração para Virtual Girlfriend AI
+Instala dependências e configura o ambiente automaticamente
+"""
+
+import subprocess
+import sys
+import os
+import json
+import platform
 
 """
 Script de instalação e configuração para Virtual Girlfriend AI
@@ -8,59 +18,67 @@ import subprocess
 import sys
 import os
 import json
-import tkinter as tk
-from tkinter import messagebox, simpledialog
+import platform
+
+def check_python_version():
+    """Verifica se a versão do Python é compatível"""
+    if sys.version_info < (3, 7):
+        print("❌ Python 3.7 ou superior é necessário!")
+        return False
+    
+    print(f"✅ Python {sys.version_info.major}.{sys.version_info.minor} detectado")
+    return True
 
 def install_requirements():
     """Instala todas as dependências necessárias"""
     required_packages = [
         'google-generativeai',
-        'tkinter',  # Já vem com Python
         'psutil',
         'pillow',
-        'opencv-python',
-        'numpy',
         'requests'
     ]
     
     print("🔧 Instalando dependências...")
     
     for package in required_packages:
-        if package == 'tkinter':
-            continue  # tkinter já vem com Python
-            
         try:
             print(f"Instalando {package}...")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package], 
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print(f"✅ {package} instalado com sucesso!")
         except subprocess.CalledProcessError as e:
-            print(f"❌ Erro ao instalar {package}: {e}")
-            return False
+            print(f"⚠️ Erro ao instalar {package}: {e}")
+            print(f"Tentando instalar {package} com --user...")
+            try:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', package],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(f"✅ {package} instalado com sucesso (modo usuário)!")
+            except subprocess.CalledProcessError:
+                print(f"❌ Falha ao instalar {package}")
+                return False
     
     return True
 
-def get_api_key():
-    """Obtém a chave da API do Gemini do usuário"""
-    root = tk.Tk()
-    root.withdraw()  # Esconde janela principal
+def get_api_key_console():
+    """Obtém a chave da API do Gemini via console"""
+    print("\n" + "="*60)
+    print("🔑 CONFIGURAÇÃO DA API GEMINI")
+    print("="*60)
+    print("\nPara usar a Virtual Girlfriend AI, você precisa de uma chave da API do Google Gemini.")
+    print("\n📝 Como obter sua API Key:")
+    print("1. Acesse: https://ai.google.dev/")
+    print("2. Clique em 'Get API Key'")
+    print("3. Faça login com sua conta Google")
+    print("4. Crie uma nova API Key (é gratuito)")
+    print("5. Cole a chave abaixo")
     
-    messagebox.showinfo(
-        "Configuração da API", 
-        "Para usar a Virtual Girlfriend AI, você precisa de uma chave da API do Google Gemini.\n\n"
-        "1. Vá para: https://ai.google.dev/\n"
-        "2. Clique em 'Get API Key'\n"
-        "3. Crie uma conta Google AI (gratuita)\n"
-        "4. Gere sua API Key\n"
-        "5. Cole a chave na próxima tela"
-    )
+    print("\n" + "-"*60)
+    api_key = input("Cole sua API Key do Google Gemini aqui: ").strip()
     
-    api_key = simpledialog.askstring(
-        "API Key do Gemini",
-        "Cole sua API Key do Google Gemini:",
-        show='*'
-    )
+    if not api_key:
+        print("❌ API Key é obrigatória!")
+        return None
     
-    root.destroy()
     return api_key
 
 def create_config_file(api_key):
@@ -82,126 +100,202 @@ def create_config_file(api_key):
         print(f"❌ Erro ao criar configuração: {e}")
         return False
 
-def create_desktop_shortcut():
-    """Cria atalho na área de trabalho (Windows)"""
-    try:
-        if sys.platform == 'win32':
-            import winshell
-            from win32com.client import Dispatch
-            
-            desktop = winshell.desktop()
-            path = os.path.join(desktop, "Virtual Girlfriend AI.lnk")
-            target = os.path.join(os.getcwd(), "main_application.py")
-            
-            shell = Dispatch('WScript.Shell')
-            shortcut = shell.CreateShortCut(path)
-            shortcut.Targetpath = sys.executable
-            shortcut.Arguments = f'"{target}"'
-            shortcut.WorkingDirectory = os.getcwd()
-            shortcut.IconLocation = sys.executable
-            shortcut.save()
-            
-            print("✅ Atalho criado na área de trabalho!")
-    except Exception as e:
-        print(f"⚠️  Não foi possível criar atalho: {e}")
-
-def show_welcome_message():
-    """Mostra mensagem de boas-vindas"""
-    root = tk.Tk()
-    root.withdraw()
-    
-    welcome_text = """🎉 Instalação Concluída!
-
-Sua Virtual Girlfriend AI está pronta para uso!
-
-🚀 Para começar:
-1. Execute o arquivo 'main_application.py'
-2. Configure a personalidade da sua companheira
-3. Comece a conversar!
-
-💡 Dicas:
-• Use F1 para ativar o modo Agente Pessoal
-• Personalize completamente sua companheira na aba Personalidade
-• Suas conversas são salvas automaticamente por data
-
-Divirta-se! 💕"""
-    
-    messagebox.showinfo("Instalação Completa", welcome_text)
-    root.destroy()
-
-def check_python_version():
-    """Verifica se a versão do Python é compatível"""
-    if sys.version_info < (3, 7):
-        print("❌ Python 3.7 ou superior é necessário!")
-        return False
-    
-    print(f"✅ Python {sys.version_info.major}.{sys.version_info.minor} detectado")
-    return True
-
 def create_batch_file():
-    """Cria arquivo batch para facilitar execução (Windows)"""
-    if sys.platform == 'win32':
+    """Cria arquivo executável para facilitar uso"""
+    system = platform.system()
+    
+    if system == "Windows":
         batch_content = f"""@echo off
+title Virtual Girlfriend AI
 cd /d "{os.getcwd()}"
-python main_application.py
-pause
+echo Iniciando Virtual Girlfriend AI...
+python -m main_application.py
+if errorlevel 1 (
+    echo.
+    echo Erro ao executar a aplicacao. Verifique se todas as dependencias estao instaladas.
+    pause
+)
 """
         try:
-            with open('Executar_Virtual_Girlfriend.bat', 'w') as f:
+            with open('Executar_Virtual_Girlfriend.bat', 'w', encoding='utf-8') as f:
                 f.write(batch_content)
             print("✅ Arquivo executável criado: Executar_Virtual_Girlfriend.bat")
         except Exception as e:
-            print(f"⚠️  Erro ao criar arquivo batch: {e}")
+            print(f"⚠️ Erro ao criar arquivo batch: {e}")
+    
+    elif system == "Darwin" or system == "Linux":  # macOS e Linux
+        script_content = f"""#!/bin/bash
+echo "Iniciando Virtual Girlfriend AI..."
+cd "{os.getcwd()}"
+python3 main_application.py
+"""
+        try:
+            with open('executar_virtual_girlfriend.sh', 'w') as f:
+                f.write(script_content)
+            
+            # Dar permissão de execução
+            os.chmod('executar_virtual_girlfriend.sh', 0o755)
+            print("✅ Script executável criado: executar_virtual_girlfriend.sh")
+        except Exception as e:
+            print(f"⚠️ Erro ao criar script: {e}")
+
+def create_requirements_txt():
+    """Cria arquivo requirements.txt para futuras instalações"""
+    requirements = """google-generativeai>=0.3.0
+psutil>=5.8.0
+pillow>=8.0.0
+requests>=2.25.0
+"""
+    
+    try:
+        with open('requirements.txt', 'w') as f:
+            f.write(requirements)
+        print("✅ Arquivo requirements.txt criado")
+    except Exception as e:
+        print(f"⚠️ Erro ao criar requirements.txt: {e}")
+
+def show_final_instructions():
+    """Mostra instruções finais para o usuário"""
+    system = platform.system()
+    
+    print("\n" + "="*60)
+    print("🎉 INSTALAÇÃO CONCLUÍDA COM SUCESSO!")
+    print("="*60)
+    
+    print("\n✨ Sua Virtual Girlfriend AI está pronta para uso!")
+    
+    print("\n🚀 COMO EXECUTAR:")
+    if system == "Windows":
+        print("   • Duplo-clique em 'Executar_Virtual_Girlfriend.bat'")
+        print("   • Ou execute: python main_application.py")
+    else:
+        print("   • Execute: ./executar_virtual_girlfriend.sh")
+        print("   • Ou execute: python3 main_application.py")
+    
+    print("\n💡 DICAS IMPORTANTES:")
+    print("   • Configure a personalidade da sua companheira na aba lateral")
+    print("   • Use F1 para ativar/desativar o modo Agente Pessoal")
+    print("   • Suas conversas são salvas automaticamente por data")
+    print("   • Use Ctrl+Enter para enviar mensagens rapidamente")
+    
+    print("\n🔧 RESOLUÇÃO DE PROBLEMAS:")
+    print("   • Se houver erro de API, verifique sua chave do Gemini")
+    print("   • Para reinstalar dependências: pip install -r requirements.txt")
+    print("   • Verifique se o Python 3.7+ está instalado")
+    
+    print("\n📁 ARQUIVOS CRIADOS:")
+    print("   • config.json - Suas configurações")
+    print("   • virtual_girlfriend.db - Banco de dados das conversas")
+    print("   • requirements.txt - Lista de dependências")
+    
+    if system == "Windows":
+        print("   • Executar_Virtual_Girlfriend.bat - Atalho para execução")
+    else:
+        print("   • executar_virtual_girlfriend.sh - Script de execução")
+
+def test_installation():
+    """Testa se a instalação foi bem-sucedida"""
+    print("\n🧪 Testando instalação...")
+    
+    try:
+        # Testa importações básicas
+        import sqlite3
+        print("✅ SQLite disponível")
+        
+        import json
+        print("✅ JSON disponível")
+        
+        # Testa dependências instaladas
+        try:
+            import psutil
+            print("✅ PSUtil disponível")
+        except ImportError:
+            print("⚠️ PSUtil não encontrado")
+            
+        try:
+            import PIL
+            print("✅ Pillow disponível")
+        except ImportError:
+            print("⚠️ Pillow não encontrado")
+            
+        try:
+            import google.generativeai
+            print("✅ Google Generative AI disponível")
+        except ImportError:
+            print("⚠️ Google Generative AI não encontrado")
+        
+        # Testa criação do banco de dados
+        try:
+            from database_system import VirtualGirlfriendDB
+            db = VirtualGirlfriendDB("test_db.db")
+            os.remove("test_db.db")
+            print("✅ Sistema de banco de dados funcionando")
+        except Exception as e:
+            print(f"⚠️ Erro no sistema de banco: {e}")
+        
+        print("✅ Instalação testada com sucesso!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erro no teste: {e}")
+        return False
 
 def main():
     """Função principal de instalação"""
-    print("=" * 50)
-    print("🔧 INSTALADOR VIRTUAL GIRLFRIEND AI")
-    print("=" * 50)
+    print("=" * 60)
+    print("🔧 INSTALADOR VIRTUAL GIRLFRIEND AI v2.0")
+    print("=" * 60)
     
     # Verificar versão do Python
     if not check_python_version():
-        input("Pressione Enter para sair...")
+        input("\nPressione Enter para sair...")
         return
     
     # Instalar dependências
     print("\n📦 Instalando dependências...")
     if not install_requirements():
-        print("❌ Falha na instalação das dependências!")
+        print("\n❌ Falha na instalação das dependências!")
+        print("Tente executar manualmente: pip install -r requirements.txt")
         input("Pressione Enter para sair...")
         return
     
+    # Criar arquivo requirements.txt
+    create_requirements_txt()
+    
     # Obter API key
     print("\n🔑 Configurando API...")
-    api_key = get_api_key()
+    api_key = get_api_key_console()
     
-    if not api_key or not api_key.strip():
+    if not api_key:
         print("❌ API Key é obrigatória para o funcionamento!")
         input("Pressione Enter para sair...")
         return
     
     # Criar arquivo de configuração
-    print("\n⚙️  Criando configurações...")
-    if not create_config_file(api_key.strip()):
+    print("\n⚙️ Criando configurações...")
+    if not create_config_file(api_key):
         input("Pressione Enter para sair...")
         return
     
-    # Criar arquivos auxiliares
+    # Criar arquivos executáveis
+    print("\n📁 Criando arquivos auxiliares...")
     create_batch_file()
-    create_desktop_shortcut()
     
-    # Mensagem de sucesso
-    print("\n✅ Instalação concluída com sucesso!")
-    show_welcome_message()
+    # Testar instalação
+    if not test_installation():
+        print("⚠️ Alguns componentes podem não estar funcionando perfeitamente.")
     
-    print("\n🚀 Para executar a aplicação:")
-    if sys.platform == 'win32':
-        print("   • Duplo-clique em 'Executar_Virtual_Girlfriend.bat'")
-        print("   • Ou execute: python main_application.py")
-    else:
-        print("   • Execute: python3 main_application.py")
+    # Instruções finais
+    show_final_instructions()
     
-    input("\nPressione Enter para finalizar...")
+    print("\n" + "="*60)
+    input("Pressione Enter para finalizar...")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n❌ Instalação cancelada pelo usuário.")
+    except Exception as e:
+        print(f"\n❌ Erro inesperado: {e}")
+        input("Pressione Enter para sair...")
